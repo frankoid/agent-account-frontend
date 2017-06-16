@@ -37,50 +37,43 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class LandingController @Inject()(override val messagesApi: MessagesApi, override val authConnector: AuthConnector, mappingConnector: MappingConnector, override val config: PasscodeVerificationConfig,
-                                  override val passcodeAuthenticationProvider: PasscodeAuthenticationProvider, authenticationService: AuthenticationService)(implicit appConfig: FrontendAppConfig)
-  extends FrontendController with I18nSupport with Actions with AuthActions with PasscodeAuthentication {
-
-  private def hasMtdEnrolment(implicit request: AgentRequest[_]): Boolean = request.enrolments.exists(_.key == "HMRC-AS-AGENT")
-
-  private def hasMapping(implicit request: AgentRequest[_]): Future[Boolean] = {
-
-    lazy val arn = Await.result(authenticationService.getArn(), Duration("10000"))
-    mappingConnector.findMapping(Arn("AARN0000002")) map {
-      r: Int =>
-        r match {
-          case OK => true
-          case NOT_FOUND => false
-          case _ => false
-        }
-    }
-
-  }
-/*
-  mappingConnector.createMapping(mappingData.utr, mappingData.arn, request.saAgentReference) map { r: Int =>
-    r match {
-      case CREATED*/
-  /*
-  mappingResult.onComplete {
-    case Success(result) if result.equals(200) => true
-    case Success(result) if result.equals(404) => false
-    case _ => false
-  }*/
+class LandingController @Inject()(
+  override val messagesApi: MessagesApi,
+  override val authConnector: AuthConnector,
+  mappingConnector: MappingConnector,
+  override val config: PasscodeVerificationConfig,
+  override val passcodeAuthenticationProvider: PasscodeAuthenticationProvider,
+  authenticationService: AuthenticationService)(implicit appConfig: FrontendAppConfig) extends FrontendController
+  with I18nSupport
+  with Actions
+  with AuthActions
+  with PasscodeAuthentication {
 
   val root: Action[AnyContent] = PasscodeAuthenticatedAction {
     implicit request =>
       Redirect(routes.LandingController.agentAccountLanding())
   }
 
-  val agentAccountLanding: Action[AnyContent] = AuthorisedAsAgent {
-    implicit authContext => implicit request =>
-      (hasMtdEnrolment,
-        hasMapping.value.get.get) match {
-        case (false, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(1))
-        case (true, false) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(2))
-        case (true, true) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(3))
-        case (_, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(4))
-      }
+  val agentAccountLanding: Action[AnyContent] = AuthorisedWithAgentAsync { implicit authContext => implicit request =>
+
+    for {
+      mapping <- hasMapping
+      enrolment = hasMtdEnrolment
+    } yield (enrolment, mapping) match {
+      case (false, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(1))
+      case (true, false) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(2))
+      case (true, true) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(3))
+      case (_, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(4))
+    }
   }
 
+  private def hasMtdEnrolment(implicit request: AgentRequest[_]): Boolean =
+    request.enrolments.exists(_.key == "HMRC-AS-AGENT")
+
+  private def hasMapping(implicit request: AgentRequest[_]): Future[Boolean] = {
+    for {
+      arn <- authenticationService.getArn()
+      status <- mappingConnector.hasMapping(arn)
+    } yield status
+  }
 }

@@ -16,36 +16,32 @@
 
 package uk.gov.hmrc.agentaccountfrontend.auth
 
-import play.api.libs.json.JsValue
 import play.api.mvc._
+import uk.gov.hmrc.agentaccountfrontend.controllers.routes
 import uk.gov.hmrc.passcode.authentication.PasscodeAuthentication
 import uk.gov.hmrc.play.frontend.auth.{Actions, AuthContext}
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.agentaccountfrontend.model.{AuthEnrolment, Enrolments}
 
 trait AuthActions extends Actions with PasscodeAuthentication {
 
   case class AgentRequest[A](enrolments: List[Enrolment], request: Request[A]) extends WrappedRequest[A](request)
 
   protected type AsyncPlayUserRequest = AuthContext => AgentRequest[AnyContent] => Future[Result]
-  protected type PlayUserRequest = AuthContext => AgentRequest[AnyContent] => Result
   private implicit def hc(implicit request: Request[_]): HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
 
-
-  def AuthorisedAsAgent(body: PlayUserRequest): Action[AnyContent] =
+  def AuthorisedWithAgentAsync(body: AsyncPlayUserRequest): Action[AnyContent] =
     AuthorisedFor(NoOpRegime, pageVisibility = GGConfidence).async {
       implicit authContext => implicit request =>
         withVerifiedPasscode {
-          isAgentAffinityGroup() flatMap {
-            case true =>  enrolments map { e => body(authContext)(AgentRequest(e, request)) }
-            case false => ???
+          isAgentAffinityGroup.flatMap {
+            case true => enrolments.flatMap(e => body(authContext)(AgentRequest(e, request)))
+            case false => Future.successful(Redirect(routes.LandingController.root))
           }
         }
     }
-
 
   protected def enrolments(implicit authContext: AuthContext, hc: HeaderCarrier): Future[List[Enrolment]] =
     authConnector.getEnrolments[List[Enrolment]](authContext)

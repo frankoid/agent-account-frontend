@@ -21,25 +21,26 @@ import javax.inject.{Inject, Named, Singleton}
 
 import play.api.http.Status
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, Upstream4xxResponse}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, NotFoundException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MappingConnector @Inject()(@Named("agent-mapping-baseUrl") baseUrl: URL, http: HttpGet) {
 
-  def findMapping(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Int] = {
-    http.GET(createUrl(arn)).map{
-      r => r.status
-    }.recover {
-      case e: Upstream4xxResponse if Status.FORBIDDEN.equals(e.upstreamResponseCode) => Status.FORBIDDEN
-      case e: Upstream4xxResponse if Status.CONFLICT.equals(e.upstreamResponseCode) => Status.CONFLICT
-      case e => throw e
-    }
+  def hasMapping(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
+    http.GET(createUrl(arn))
+      .map(_.status match {
+        case Status.OK => true
+        case _ => false
+      })
+      .recover {
+        case _: NotFoundException => false
+      }
   }
 
   private def createUrl(arn: Arn): String = {
     new URL(baseUrl, s"/agent-mapping/mappings/${arn.value}").toString
   }
 
-  }
+}
