@@ -1,3 +1,4 @@
-# microservice specific routes
+#microservice specific routes
 
-GET        /hello-world             uk.gov.hmrc.agentaccountfrontend.controllers.HelloWorld.helloWorld
+GET        /                                   @uk.gov.hmrc.agentaccountfrontend.controllers.LandingController.root
+GET        /agent-services-account             @uk.gov.hmrc.agentaccountfrontend.controllers.LandingController.agentAccountLanding()
