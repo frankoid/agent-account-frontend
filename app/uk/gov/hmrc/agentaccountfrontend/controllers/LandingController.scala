@@ -22,32 +22,23 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentaccountfrontend.auth.AuthActions
 import uk.gov.hmrc.agentaccountfrontend.config.AppConfig
-import uk.gov.hmrc.agentaccountfrontend.config.FrontendAppConfig
 import uk.gov.hmrc.agentaccountfrontend.connectors.MappingConnector
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.passcode.authentication.{PasscodeAuthentication, PasscodeAuthenticationProvider, PasscodeVerificationConfig}
-import uk.gov.hmrc.play.frontend.auth.{Actions, AuthContext}
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import uk.gov.hmrc.agentaccountfrontend.connectors.{AuthArnDetails, AuthenticationConnector}
 import uk.gov.hmrc.agentaccountfrontend.service.AuthenticationService
-import uk.gov.hmrc.play.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.Future
 
-class LandingController @Inject()(
-  override val messagesApi: MessagesApi,
-  override val authConnector: AuthConnector,
-  mappingConnector: MappingConnector,
-  override val config: PasscodeVerificationConfig,
-  override val passcodeAuthenticationProvider: PasscodeAuthenticationProvider,
-  authenticationService: AuthenticationService)(implicit appConfig: FrontendAppConfig) extends FrontendController
-  with I18nSupport
-  with Actions
-  with AuthActions
-  with PasscodeAuthentication {
+class LandingController @Inject()(override val messagesApi: MessagesApi,
+                                  override val authConnector: AuthConnector,
+                                  override val config: PasscodeVerificationConfig,
+                                  authenticationService: AuthenticationService,
+                                  mappingConnector: MappingConnector,
+                                  override val passcodeAuthenticationProvider: PasscodeAuthenticationProvider)
+                                 (implicit appConfig: AppConfig)
+  extends FrontendController with I18nSupport with AuthActions with PasscodeAuthentication {
 
   val root: Action[AnyContent] = PasscodeAuthenticatedAction {
     implicit request =>
