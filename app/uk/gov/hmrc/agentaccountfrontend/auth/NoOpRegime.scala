@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@(pageTitle: String, heading: String, message: String)(implicit request: Request[_], messages: Messages, appConfig: uk.gov.hmrc.agentaccountfrontend.config.AppConfig)
+package uk.gov.hmrc.agentaccountfrontend.auth
 
-@contentHeader = {
-  <h1>@heading</h1>
+import uk.gov.hmrc.agentaccountfrontend.config.GGConfig
+import uk.gov.hmrc.play.frontend.auth.{GovernmentGateway, TaxRegime}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
+
+object NoOpRegime extends TaxRegime {
+  override def isAuthorised(accounts: Accounts) = true
+  override val authenticationType = CheckAgencyStatusGovernmentGateway
 }
 
-@mainContent = {
-  <p>@message</p>
+object CheckAgencyStatusGovernmentGateway extends GovernmentGateway {
+  override lazy val loginURL = GGConfig.ggSignInUrl
+  override lazy val continueURL = GGConfig.checkAgencyStatusCallbackUrl
 }
-
-@govuk_wrapper(appConfig = appConfig, title = pageTitle, contentHeader = Some(contentHeader), mainContent = mainContent)
