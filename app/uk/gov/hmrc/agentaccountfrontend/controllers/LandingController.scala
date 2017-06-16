@@ -56,16 +56,6 @@ class LandingController @Inject()(override val messagesApi: MessagesApi, overrid
     }
 
   }
-/*
-  mappingConnector.createMapping(mappingData.utr, mappingData.arn, request.saAgentReference) map { r: Int =>
-    r match {
-      case CREATED*/
-  /*
-  mappingResult.onComplete {
-    case Success(result) if result.equals(200) => true
-    case Success(result) if result.equals(404) => false
-    case _ => false
-  }*/
 
   val root: Action[AnyContent] = PasscodeAuthenticatedAction {
     implicit request =>

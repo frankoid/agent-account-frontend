@@ -17,9 +17,10 @@
 package uk.gov.hmrc.agentaccountfrontend.config
 
 import play.api.Play.{configuration, current}
-import uk.gov.hmrc.agentaccountfrontend.controllers.routes
 import uk.gov.hmrc.play.config.ServicesConfig
 import javax.inject.Singleton
+
+import uk.gov.hmrc.agentaccountfrontend.controllers.routes
 
 trait AppConfig {
   val analyticsToken: String
