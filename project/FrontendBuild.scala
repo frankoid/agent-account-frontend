@@ -9,8 +9,8 @@ object FrontendBuild extends Build with MicroService {
 
   val appName = "agent-account-frontend"
 
-  override lazy val appDependencies: Seq[ModuleID] = compile ++ test()
-
+  override lazy val appDependencies: Seq[ModuleID] = compile ++ test() ++ test("it")
+  
   val compile = Seq(
     ws,
     "uk.gov.hmrc" %% "frontend-bootstrap" % "7.25.0",
