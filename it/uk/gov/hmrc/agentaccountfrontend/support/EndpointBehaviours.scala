@@ -51,7 +51,7 @@ trait EndpointBehaviours {
 
   protected def aWhitelistedEndpoint(doRequest: PlayRequest): Unit = {
     "prevent access if passcode authorisation fails" in {
-      AuthStub.hasNoEnrolments(subscribingAgent)
+      AuthStub.isNotEnrolled(subscribingAgent)
 
       AuthStub.passcodeAuthorisationFails()
 
@@ -63,7 +63,7 @@ trait EndpointBehaviours {
     }
 
     "allow access if passcode authorisation succeeds" in {
-      AuthStub.hasNoEnrolments(subscribingAgent)
+      AuthStub.isNotEnrolled(subscribingAgent)
 
       val sessionKeys = AuthStub.passcodeAuthorisationSucceeds()
 
