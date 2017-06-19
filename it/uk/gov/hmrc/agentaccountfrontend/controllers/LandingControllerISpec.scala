@@ -12,42 +12,47 @@ class LandingControllerISpec extends BaseControllerISpec {
 
   lazy val arn: Arn = Arn("AARN0000002")
 
-"Landing Controller" should {
+  private lazy val configuredGovernmentGatewayUrl = "http://configured-government-gateway.gov.uk/"
 
-  lazy val controller: LandingController = app.injector.instanceOf[LandingController]
+  override protected def appBuilder: GuiceApplicationBuilder = super.appBuilder
+    .configure("government-gateway.url" -> configuredGovernmentGatewayUrl)
 
-  "show number 1 if user has no enrolment" in {
 
-    AuthStub.hasNoEnrolments(subscribingAgent)
+  "Landing Controller" should {
 
-    val result = await(controller.agentAccountLanding(authenticatedRequest()))
-    status(result) shouldBe 303
-    bodyOf(result) should include("1")
+    lazy val controller: LandingController = app.injector.instanceOf[LandingController]
+
+    "show number 1 if user has no enrolment" in {
+
+      AuthStub.isNotEnrolled(subscribingAgent)
+      val result = await(controller.agentAccountLanding(authenticatedRequest()))
+      status(result) shouldBe 200
+      bodyOf(result) should include("1")
+    }
+
+    "show number 2 if user has enrolment with no mapping " in {
+
+      AuthStub.isEnrolled(subscribingAgent)
+      MappingStubs.mappingNotFound(arn)
+
+      val result = await(controller.agentAccountLanding(authenticatedRequest()))
+      status(result) shouldBe 200
+      bodyOf(result) should include("2")
+
+
+    }
+
+    "show number 3 if user has enrolement and mapping" in {
+
+      AuthStub.isEnrolled(subscribingAgent)
+
+      MappingStubs.mappingIsFound(arn)
+      val result = await(controller.agentAccountLanding(authenticatedRequest()))
+      status(result) shouldBe 200
+      bodyOf(result) should include("3")
+
+
+    }
   }
-
-  "show number 2 if user has enrolment with no mapping " in {
-
-    AuthStub.isEnrolledForNonMtdServices(subscribingAgent)
-    MappingStubs.mappingNotFound(arn)
-
-    val result = await(controller.agentAccountLanding(authenticatedRequest()))
-    status(result) shouldBe 303
-    bodyOf(result) should include("2")
-
-
-  }
-
-  "show number 3 if user has enrolement and mapping" in {
-
-    AuthStub.isEnrolledForNonMtdServices(subscribingAgent)
-
-    MappingStubs.mappingIsFound(arn)
-    val result = await(controller.agentAccountLanding(authenticatedRequest()))
-    status(result) shouldBe 303
-    bodyOf(result) should include("3")
-
-
-  }
-}
 
 }

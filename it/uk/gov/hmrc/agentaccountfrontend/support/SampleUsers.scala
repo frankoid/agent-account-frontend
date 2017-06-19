@@ -1,25 +1,12 @@
-/*
- * Copyright 2017 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package uk.gov.hmrc.agentaccountfrontend.support
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json.parse
+import uk.gov.hmrc.agentaccountfrontend.support.WireMockBaseUrl
+import uk.gov.hmrc.domain.SaAgentReference
 
-case class SampleUser(authJson: String, userDetailsJson: String) {
-  private val json: JsValue = Json.parse(authJson)
+case class SampleUser(authJson: String, userDetailsJson: String, saAgentReference: Option[SaAgentReference] = None) {
+  private val json: JsValue = parse(authJson)
 
   val authorityUri: String = (json \ "uri").as[String]
   val userDetailsLink: String = (json \ "userDetailsLink").as[String]
@@ -27,11 +14,10 @@ case class SampleUser(authJson: String, userDetailsJson: String) {
 }
 
 object SampleUsers {
-
   private val subscribingAgentOid = "1234567890"
   private val subscribingAgentUserDetailsLink: String = s"/user-details/id/$subscribingAgentOid"
   def subscribingAgent(implicit wireMockBaseUrl: WireMockBaseUrl) = SampleUser(
-      s"""
+    s"""
        |{
        |  "uri": "/auth/oid/$subscribingAgentOid",
        |  "userDetailsLink": "$subscribingAgentUserDetailsLink",
@@ -51,14 +37,18 @@ object SampleUsers {
        |}
     """.stripMargin,
     userDetailsJson = s"""
-       |{
-       |  "affinityGroup": "Agent"
-       |}
-    """.stripMargin
+                         |{
+                         |  "affinityGroup": "Agent",
+                         |  "authProviderId" : "12345-credId",
+                         |  "authProviderType" : "GovernmentGateway"
+                         |}
+    """.stripMargin,
+    saAgentReference = Some(SaAgentReference("HZ1234"))
   )
 
   private val individualOid = "234567891"
   private val individualUserDetailsLink: String = s"/user-details/id/$individualOid"
+
   def individual(implicit wireMockBaseUrl: WireMockBaseUrl) = SampleUser(
     s"""
        |{
@@ -80,11 +70,12 @@ object SampleUsers {
        |}
     """.stripMargin,
     userDetailsJson = s"""
-       |{
-       |  "affinityGroup": "Individual"
-       |}
+                         |{
+                         |  "affinityGroup": "Individual",
+                         |  "authProviderId": "cred-id-12345",
+                         |  "authProviderType": "Verify"
+                         |}
     """.stripMargin
 
   )
 }
-
