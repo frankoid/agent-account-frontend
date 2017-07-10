@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.agentaccountfrontend.config
 
-import play.api.Play.{configuration, current}
-import uk.gov.hmrc.play.config.ServicesConfig
 import javax.inject.Singleton
 
+import play.api.Play.{configuration, current}
 import uk.gov.hmrc.agentaccountfrontend.controllers.routes
+import uk.gov.hmrc.play.config.ServicesConfig
 
 trait AppConfig {
   val analyticsToken: String
@@ -29,7 +29,7 @@ trait AppConfig {
   val reportAProblemNonJSUrl: String
 }
 
-trait StrictConfig{
+trait StrictConfig {
   def loadConfig(key: String): String = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
 }
 
@@ -53,6 +53,8 @@ object GGConfig extends StrictConfig {
 class FrontendAppConfig extends AppConfig with ServicesConfig {
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
+
+  lazy val getAccountPageCallbackUrl: String = loadConfig("agent-account-frontend-callback.url")
 
   private lazy val contactHost = configuration.getString(s"contact-frontend.host").getOrElse("")
   private lazy val contactFormServiceIdentifier = "MyService"

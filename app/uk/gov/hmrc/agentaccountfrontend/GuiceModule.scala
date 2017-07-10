@@ -24,8 +24,8 @@ import com.google.inject.name.Names
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.agentaccountfrontend.config.{AppConfig, FrontendAppConfig, FrontendAuthConnector, WSHttp}
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.HttpGet
 
 class GuiceModule(environment: Environment, configuration: Configuration) extends AbstractModule with ServicesConfig {
@@ -36,7 +36,7 @@ class GuiceModule(environment: Environment, configuration: Configuration) extend
   override def configure(): Unit = {
     bind(classOf[HttpGet]).toInstance(WSHttp)
     bind(classOf[AppConfig]).to(classOf[FrontendAppConfig])
-    bind(classOf[AuthConnector]).to(classOf[FrontendAuthConnector])
+    bind(classOf[PlayAuthConnector]).to(classOf[FrontendAuthConnector])
     bindBaseUrl("agent-account-frontend")
     bindBaseUrl("agent-mapping")
     bindBaseUrl("auth")

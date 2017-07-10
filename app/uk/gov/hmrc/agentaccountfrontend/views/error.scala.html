@@ -1,4 +1,4 @@
-/*
+@*
  * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,14 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*@
 
-package uk.gov.hmrc.agentaccountfrontend.auth
+@import uk.gov.hmrc.agentaccountfrontend.config.AppConfig
 
-import play.api.libs.json.{Format, Json}
+@()(implicit request: Request[_], messages: Messages, appConfig: uk.gov.hmrc.agentaccountfrontend.config.AppConfig)
 
-case class Enrolment(key: String)
-
-object Enrolment {
-  implicit val format: Format[Enrolment] = Json.format[Enrolment]
+@uk.gov.hmrc.agentaccountfrontend.views.html.main_template(title = "Error", bodyClasses = None) {
+<h1>Error</h1>
 }

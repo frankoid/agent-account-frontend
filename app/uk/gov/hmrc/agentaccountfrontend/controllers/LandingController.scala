@@ -16,37 +16,33 @@
 
 package uk.gov.hmrc.agentaccountfrontend.controllers
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
+import play.api.Application
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentaccountfrontend.auth.AuthActions
 import uk.gov.hmrc.agentaccountfrontend.config.AppConfig
 import uk.gov.hmrc.agentaccountfrontend.connectors.MappingConnector
-import uk.gov.hmrc.passcode.authentication.{PasscodeAuthentication, PasscodeAuthenticationProvider, PasscodeVerificationConfig}
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import uk.gov.hmrc.agentaccountfrontend.service.AuthenticationService
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.play.http.HeaderCarrier
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class LandingController @Inject()(override val messagesApi: MessagesApi,
-                                  override val authConnector: AuthConnector,
-                                  override val config: PasscodeVerificationConfig,
-                                  authenticationService: AuthenticationService,
                                   mappingConnector: MappingConnector,
-                                  override val passcodeAuthenticationProvider: PasscodeAuthenticationProvider)
+                                  implicit val app: Application)
                                  (implicit appConfig: AppConfig)
-  extends FrontendController with I18nSupport with AuthActions with PasscodeAuthentication {
+  extends FrontendController with I18nSupport with AuthActions {
 
-  val root: Action[AnyContent] = PasscodeAuthenticatedAction {
-    implicit request =>
-      Redirect(routes.LandingController.agentAccountLanding())
+  val root: Action[AnyContent] = AuthorisedWithAgentAsync {
+    implicit request => implicit agentRequest =>
+      Future successful Redirect(routes.LandingController.agentAccountLanding())
   }
 
-  val agentAccountLanding: Action[AnyContent] = AuthorisedWithAgentAsync { implicit authContext => implicit request =>
-
+  val agentAccountLanding: Action[AnyContent] = AuthorisedWithAgentAsync { implicit request => implicit agentRequest =>
     for {
       mapping <- hasMapping
       enrolment = hasMtdEnrolment
@@ -58,13 +54,18 @@ class LandingController @Inject()(override val messagesApi: MessagesApi,
     }
   }
 
-  private def hasMtdEnrolment(implicit request: AgentRequest[_]): Boolean =
-    request.enrolments.exists(_.key == "HMRC-AS-AGENT")
+  val goToErrorPage: Action[AnyContent] = Action {
+    implicit request =>
+      Ok(uk.gov.hmrc.agentaccountfrontend.views.html.error())
+  }
 
-  private def hasMapping(implicit request: AgentRequest[_]): Future[Boolean] = {
+  private def hasMtdEnrolment(implicit request: AgentRequest[_]): Boolean =
+    request.enrolments.enrolments.exists(_.key == "HMRC-AS-AGENT")
+
+  private def hasMapping(implicit request: AgentRequest[_], hc: HeaderCarrier): Future[Boolean] = {
+    lazy val agent: Arn = Arn(request.arn.get)
     for {
-      arn <- authenticationService.getArn()
-      status <- mappingConnector.hasMapping(arn)
+      status <- mappingConnector.hasMapping(agent)
     } yield status
   }
 }
