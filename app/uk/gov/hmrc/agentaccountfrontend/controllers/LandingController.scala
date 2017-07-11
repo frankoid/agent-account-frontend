@@ -63,9 +63,19 @@ class LandingController @Inject()(override val messagesApi: MessagesApi,
     request.enrolments.enrolments.exists(_.key == "HMRC-AS-AGENT")
 
   private def hasMapping(implicit request: AgentRequest[_], hc: HeaderCarrier): Future[Boolean] = {
-    lazy val agent: Arn = Arn(request.arn.get)
-    for {
-      status <- mappingConnector.hasMapping(agent)
-    } yield status
+    getArnFromOption(request.arn) match {
+      case Right(false) => Future successful false
+      case Left(x) =>
+        for {
+          status <- mappingConnector.hasMapping(x)
+        } yield status
+    }
+  }
+
+  private def getArnFromOption(arn: Option[String])(implicit request: AgentRequest[_]): Either[Arn, Boolean] = {
+    arn match {
+      case Some(_) => Left(Arn(arn.get))
+      case None => Right(false)
+    }
   }
 }
