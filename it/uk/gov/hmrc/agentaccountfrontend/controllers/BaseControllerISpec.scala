@@ -22,7 +22,8 @@ abstract class BaseControllerISpec extends UnitSpec with OneAppPerSuite with Wir
       .configure(
         "microservice.services.auth.port" -> wireMockPort,
         "microservice.services.agent-mapping.port" -> wireMockPort,
-        "passcodeAuthentication.enabled" -> passcodeAuthenticationEnabled
+        "passcodeAuthentication.enabled" -> passcodeAuthenticationEnabled,
+        "metrics.enabled" -> false
       )
       .overrides(new TestGuiceModule)
   }
