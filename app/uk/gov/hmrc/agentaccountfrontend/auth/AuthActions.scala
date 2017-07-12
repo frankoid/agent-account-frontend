@@ -65,18 +65,10 @@ trait AuthActions extends AuthorisedFunctions with Redirects {
           }
         case _ => Future.successful(Redirect(routes.LandingController.goToErrorPage()))
       } recover {
-        case e => handleFailure(e)
+        case x: NoActiveSession ⇒
+          Logger.warn(s"could not authenticate user due to: No Active Session " + x)
+          toGGLogin(frontendAppConfig.getAccountPageCallbackUrl)
       }
     }
   }
-
-  def handleFailure(e: Throwable): Result =
-    e match {
-      case x: NoActiveSession ⇒
-        Logger.warn(s"could not authenticate user due to: No Active Session " + x)
-        toGGLogin(frontendAppConfig.getAccountPageCallbackUrl)
-      case ex ⇒
-        Logger.warn(s"could not authenticate user due to: $ex")
-        Redirect(routes.LandingController.goToErrorPage())
-    }
 }

@@ -50,7 +50,6 @@ class LandingController @Inject()(override val messagesApi: MessagesApi,
       case (false, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(1))
       case (true, false) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(2))
       case (true, true) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(3))
-      case (_, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(4))
     }
   }
 
@@ -63,19 +62,12 @@ class LandingController @Inject()(override val messagesApi: MessagesApi,
     request.enrolments.enrolments.exists(_.key == "HMRC-AS-AGENT")
 
   private def hasMapping(implicit request: AgentRequest[_], hc: HeaderCarrier): Future[Boolean] = {
-    getArnFromOption(request.arn) match {
-      case Right(false) => Future successful false
-      case Left(x) =>
+    request.arn match {
+      case None => Future successful false
+      case Some(arn) =>
         for {
-          status <- mappingConnector.hasMapping(x)
+          status <- mappingConnector.hasMapping(Arn(arn))
         } yield status
-    }
-  }
-
-  private def getArnFromOption(arn: Option[String])(implicit request: AgentRequest[_]): Either[Arn, Boolean] = {
-    arn match {
-      case Some(_) => Left(Arn(arn.get))
-      case None => Right(false)
     }
   }
 }

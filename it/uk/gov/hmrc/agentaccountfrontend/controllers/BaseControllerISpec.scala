@@ -4,16 +4,11 @@ import com.google.inject.AbstractModule
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{AnyContentAsEmpty, Result}
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{contentType, _}
-import uk.gov.hmrc.agentaccountfrontend.support.{SampleUsers, WireMockSupport}
+import uk.gov.hmrc.agentaccountfrontend.support.WireMockSupport
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentaccountfrontend
-import uk.gov.hmrc.agentaccountfrontend.stubs.AuthStub
 
 
-abstract class BaseControllerISpec extends UnitSpec with OneAppPerSuite with WireMockSupport  {
+abstract class BaseControllerISpec extends UnitSpec with OneAppPerSuite with WireMockSupport {
 
   override implicit lazy val app: Application = appBuilder.build()
 
@@ -22,7 +17,6 @@ abstract class BaseControllerISpec extends UnitSpec with OneAppPerSuite with Wir
       .configure(
         "microservice.services.auth.port" -> wireMockPort,
         "microservice.services.agent-mapping.port" -> wireMockPort,
-        "passcodeAuthentication.enabled" -> passcodeAuthenticationEnabled,
         "metrics.enabled" -> false
       )
       .overrides(new TestGuiceModule)
@@ -41,16 +35,4 @@ abstract class BaseControllerISpec extends UnitSpec with OneAppPerSuite with Wir
   }
 
   protected implicit val materializer = app.materializer
-
-  protected def authenticatedRequest(): FakeRequest[AnyContentAsEmpty.type] = {
-    val sessionKeys = AuthStub.userIsAuthenticated(SampleUsers.subscribingAgent)
-    FakeRequest().withSession(sessionKeys: _*)
-  }
-
-  protected def checkHtmlResultWithBodyText(result: Result, expectedSubstrings: String*): Unit = {
-    status(result) shouldBe OK
-    contentType(result) shouldBe Some("text/html")
-    charset(result) shouldBe Some("utf-8")
-    expectedSubstrings.foreach(s => bodyOf(result) should include(s))
-  }
 }
