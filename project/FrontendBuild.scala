@@ -33,7 +33,7 @@ object FrontendBuild extends Build with MicroService {
     "com.github.tomakehurst" % "wiremock" % "2.3.1" % scope,
     "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % scope,
     "org.pegdown" % "pegdown" % "1.6.0" % scope,
-    "org.mockito" % "mockito-core" % "2.7.22" % "test",
+    "org.mockito" % "mockito-core" % "2.7.22" % scope,
     "org.jsoup" % "jsoup" % "1.8.1" % scope,
     "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
   )
