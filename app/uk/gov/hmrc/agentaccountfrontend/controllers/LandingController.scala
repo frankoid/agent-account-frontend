@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentaccountfrontend.controllers
 
 import javax.inject.Inject
 
-import play.api.Application
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.agentaccountfrontend.auth.AuthActions
 import uk.gov.hmrc.agentaccountfrontend.config.AppConfig
 import uk.gov.hmrc.agentaccountfrontend.connectors.MappingConnector
@@ -31,10 +31,12 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class LandingController @Inject()(override val messagesApi: MessagesApi,
-                                  mappingConnector: MappingConnector,
-                                  implicit val app: Application)
-                                 (implicit appConfig: AppConfig)
+class LandingController @Inject()(
+  override val messagesApi: MessagesApi,
+  override val config: Configuration,
+  override val env: Environment,
+  mappingConnector: MappingConnector)
+  (implicit appConfig: AppConfig)
   extends FrontendController with I18nSupport with AuthActions {
 
   val root: Action[AnyContent] = AuthorisedWithAgentAsync {

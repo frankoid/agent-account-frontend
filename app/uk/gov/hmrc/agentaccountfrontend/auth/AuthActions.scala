@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.agentaccountfrontend.auth
 
+import play.api.Logger
 import play.api.mvc.Results._
 import play.api.mvc._
-import play.api.{Application, Configuration, Environment, Logger}
 import uk.gov.hmrc.agentaccountfrontend.config.{FrontendAppConfig, FrontendAuthConnector}
 import uk.gov.hmrc.agentaccountfrontend.controllers.routes
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
@@ -35,13 +35,7 @@ trait AuthActions extends AuthorisedFunctions with Redirects {
 
   case class AgentRequest[A](enrolments: Enrolments, arn: Option[String], request: Request[A]) extends WrappedRequest[A](request)
 
-  val app: Application
-
   override def authConnector: AuthConnector = new FrontendAuthConnector
-
-  override def config: Configuration = app.configuration
-
-  override def env: Environment = Environment(app.path, app.classloader, app.mode)
 
   lazy val frontendAppConfig = new FrontendAppConfig
 

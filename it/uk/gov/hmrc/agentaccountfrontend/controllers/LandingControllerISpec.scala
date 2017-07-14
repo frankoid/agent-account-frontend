@@ -6,6 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
 import play.api.i18n.MessagesApi
 import play.api.test.FakeRequest
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.agentaccountfrontend.config.AppConfig
 import uk.gov.hmrc.agentaccountfrontend.connectors.MappingConnector
 import uk.gov.hmrc.agentaccountfrontend.support.TestAppConfig
@@ -35,9 +36,12 @@ class LandingControllerISpec extends BaseControllerISpec with MockitoSugar with 
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Enrolments, Option[AffinityGroup]]]]())(any()))
       .thenReturn(Future successful new ~[Enrolments, Option[AffinityGroup]](Enrolments(Set()), Some(AffinityGroup.Agent)))
 
-  lazy val controller: LandingController = new LandingController(messagesApi, mockMappingConnector, fakeApplication())(appConfig) {
+  lazy val controller: LandingController = new LandingController(messagesApi, config, env, mockMappingConnector)(appConfig) {
     override lazy val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
+
+  private def config = app.injector.instanceOf[Configuration]
+  private def env = app.injector.instanceOf[Environment]
 
   override def beforeEach() {
     reset(mockMappingConnector, mockPlayAuthConnector)
