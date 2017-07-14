@@ -22,8 +22,6 @@ abstract class BaseControllerISpec extends UnitSpec with OneAppPerSuite with Wir
       .overrides(new TestGuiceModule)
   }
 
-  protected def passcodeAuthenticationEnabled: Boolean = false
-
 
   private class TestGuiceModule extends AbstractModule {
     override def configure(): Unit = {
