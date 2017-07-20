@@ -21,6 +21,7 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import uk.gov.hmrc.agentaccountfrontend.config.{FrontendAppConfig, FrontendAuthConnector}
 import uk.gov.hmrc.agentaccountfrontend.controllers.routes
+import uk.gov.hmrc.auth.core.AffinityGroup.Agent
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.Retrievals._
 import uk.gov.hmrc.auth.core._
@@ -43,8 +44,6 @@ trait AuthActions extends AuthorisedFunctions with Redirects {
 
   private implicit def hc(implicit request: Request[_]): HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
 
-  private def isAgentAffinityGroup(affinityGroup: AffinityGroup): Boolean = affinityGroup.toString.equals("Agent")
-
   private def getArn(enrolment: Set[Enrolment]) =
     enrolment.find(_.key equals "HMRC-AS-AGENT").flatMap(_.identifiers.find(_.key equals "AgentReferenceNumber").map(_.value))
 
@@ -52,15 +51,16 @@ trait AuthActions extends AuthorisedFunctions with Redirects {
     Action.async { implicit request =>
       authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and affinityGroup) {
         case enrol ~ affinityG =>
-          (isAgentAffinityGroup(affinityG.get), getArn(enrol.enrolments)) match {
-            case (true, Some(arn)) => body(request)(AgentRequest(enrol, Some(arn), request))
-            case (true, None) => body(request)(AgentRequest(enrol, None, request))
+          affinityG match {
+            case Some(Agent) => body(request)(AgentRequest(enrol, getArn(enrol.enrolments), request))
+            // TODO add test and change back to pre-new-auth URL:
+            // case _ => Future successful Redirect(routes.LandingController.root())
             case _ => Future.successful(Redirect(routes.LandingController.goToErrorPage()))
           }
-        case _ => Future.successful(Redirect(routes.LandingController.goToErrorPage()))
       } recover {
         case x: NoActiveSession ⇒
           Logger.warn(s"could not authenticate user due to: No Active Session " + x)
+          // TODO use government-gateway.sign-in.base-url ?
           toGGLogin(frontendAppConfig.getAccountPageCallbackUrl)
       }
     }
