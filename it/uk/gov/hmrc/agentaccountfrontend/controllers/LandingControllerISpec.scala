@@ -4,6 +4,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.i18n.MessagesApi
 import play.api.test.FakeRequest
 import play.api.{Configuration, Environment}
@@ -11,16 +12,19 @@ import uk.gov.hmrc.agentaccountfrontend.config.AppConfig
 import uk.gov.hmrc.agentaccountfrontend.connectors.MappingConnector
 import uk.gov.hmrc.agentaccountfrontend.support.TestAppConfig
 import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
 
-class LandingControllerISpec extends BaseControllerISpec with MockitoSugar with BeforeAndAfterEach {
+class LandingControllerISpec extends UnitSpec with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach {
 
   val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   val mockMappingConnector: MappingConnector = mock[MappingConnector]
   val mockPlayAuthConnector: PlayAuthConnector = mock[PlayAuthConnector]
   implicit val appConfig: AppConfig = TestAppConfig
+
+  protected implicit val materializer = app.materializer
 
   lazy val arn = "TARN0000001"
 
@@ -41,6 +45,7 @@ class LandingControllerISpec extends BaseControllerISpec with MockitoSugar with 
   }
 
   private def config = app.injector.instanceOf[Configuration]
+
   private def env = app.injector.instanceOf[Environment]
 
   override def beforeEach() {
