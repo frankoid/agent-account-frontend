@@ -27,8 +27,8 @@ import uk.gov.hmrc.auth.core.Retrievals._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.frontend.Redirects
 import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
