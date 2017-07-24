@@ -34,6 +34,7 @@ import scala.concurrent.Future
 
 trait AuthActions extends AuthorisedFunctions with Redirects {
 
+  case class AgentInfo(enrolments: Enrolments, arn: Option[String])
   case class AgentRequest[A](enrolments: Enrolments, arn: Option[String], request: Request[A]) extends WrappedRequest[A](request)
 
   override def authConnector: AuthConnector = new FrontendAuthConnector
@@ -49,20 +50,27 @@ trait AuthActions extends AuthorisedFunctions with Redirects {
 
   def AuthorisedWithAgentAsync(body: AsyncPlayUserRequest): Action[AnyContent] = {
     Action.async { implicit request =>
-      authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and affinityGroup) {
-        case enrol ~ affinityG =>
-          affinityG match {
-            case Some(Agent) => body(request)(AgentRequest(enrol, getArn(enrol.enrolments), request))
-            // TODO add test and change back to pre-new-auth URL:
-            // case _ => Future successful Redirect(routes.LandingController.root())
-            case _ => Future.successful(Redirect(routes.LandingController.goToErrorPage()))
-          }
+      authorisedWithAgent[Result] { agentInfo =>
+        body(request)(AgentRequest(agentInfo.enrolments, agentInfo.arn, request))
+      } map { maybeResult =>
+        // TODO add test and change back to pre-new-auth URL:
+        // Redirect(routes.LandingController.root())
+        maybeResult.getOrElse (Redirect(routes.LandingController.goToErrorPage()))
       } recover {
         case x: NoActiveSession ⇒
           Logger.warn(s"could not authenticate user due to: No Active Session " + x)
-          // TODO use government-gateway.sign-in.base-url ?
+          // TODO use authentication.login-callback.url ?
           toGGLogin(frontendAppConfig.getAccountPageCallbackUrl)
       }
     }
   }
+
+  def authorisedWithAgent[R](body: (AgentInfo => Future[R]))(implicit hc: HeaderCarrier): Future[Option[R]] =
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and affinityGroup) {
+      case enrol ~ affinityG =>
+        affinityG match {
+          case Some(Agent) => body(AgentInfo(enrol, getArn(enrol.enrolments))).map(result => Some(result))
+          case _ => Future successful None
+        }
+    }
 }
