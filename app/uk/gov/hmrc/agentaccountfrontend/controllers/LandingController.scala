@@ -27,7 +27,6 @@ import uk.gov.hmrc.passcode.authentication.{PasscodeAuthentication, PasscodeAuth
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import uk.gov.hmrc.agentaccountfrontend.service.AuthenticationService
-import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
