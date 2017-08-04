@@ -84,24 +84,24 @@ class AuthActionsSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
 
       val result: Future[Result] = testAuthImpl.testAuthActions().apply(FakeRequest())
       status(result) shouldBe 303
-      await(result.header.headers("Location")) shouldBe "/gg/sign-in?continue=http%3A%2F%2Flocalhost%3A9025%2Fgg%2Fsign-in&origin=agent-account-frontend"
+      await(result).header.headers("Location") shouldBe "/gg/sign-in?continue=http%3A%2F%2Flocalhost%3A9025%2Fgg%2Fsign-in&origin=agent-account-frontend"
     }
 
     "redirect to root if GG is not agent" in {
       mockAuth(enrolment = Set(), affinityGroup = AffinityGroup.Individual)
       val result: Future[Result] = testAuthImpl.testAuthActions().apply(FakeRequest())
       status(result) shouldBe 303
-      await(result.header.headers("Location")) shouldBe routes.LandingController.root().url
+      await(result).header.headers("Location") shouldBe routes.LandingController.root().url
     }
   }
+
+
 
   "authorisedWithAgent" should {
     "return an Agent enrolments details when authenticated user is an Agent" in {
       mockAuth(affinityGroup = AffinityGroup.Agent, enrolment = Set(agentEnrolment))
 
-
-      val result: Future[Option[testAuthImpl.AgentInfo]] = testAuthImpl.testAuthActionsRequest
-      await(result).get.enrolments shouldBe Enrolments(Set(agentEnrolment))
+      await(testAuthImpl.testAuthActionsRequest).value.enrolments shouldBe Enrolments(Set(agentEnrolment))
     }
 
 
@@ -113,4 +113,7 @@ class AuthActionsSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
       await(result) shouldBe None
     }
   }
+
+  // disable liftFuture implicit to avoid ambiguous implicit conversion when using .value from OptionValue
+  override def liftFuture[A](v: A): Future[A] = super.liftFuture(v)
 }
