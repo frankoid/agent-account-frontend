@@ -19,50 +19,56 @@ package uk.gov.hmrc.agentaccountfrontend.auth
 import play.api.Logger
 import play.api.mvc.Results._
 import play.api.mvc._
-import uk.gov.hmrc.agentaccountfrontend.config.{FrontendAppConfig, FrontendAuthConnector}
+import uk.gov.hmrc.agentaccountfrontend.config.{FrontendAppConfig, FrontendAuthConnector, GGConfig}
 import uk.gov.hmrc.agentaccountfrontend.controllers.routes
+import uk.gov.hmrc.auth.core.AffinityGroup.Agent
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.Retrievals._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.frontend.Redirects
 import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
 trait AuthActions extends AuthorisedFunctions with Redirects {
 
+  case class AgentInfo(enrolments: Enrolments, arn: Option[String])
   case class AgentRequest[A](enrolments: Enrolments, arn: Option[String], request: Request[A]) extends WrappedRequest[A](request)
 
   override def authConnector: AuthConnector = new FrontendAuthConnector
 
-  lazy val frontendAppConfig = new FrontendAppConfig
-
   protected type AsyncPlayUserRequest = Request[AnyContent] => AgentRequest[AnyContent] => Future[Result]
 
   private implicit def hc(implicit request: Request[_]): HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
-
-  private def isAgentAffinityGroup(affinityGroup: AffinityGroup): Boolean = affinityGroup.toString.equals("Agent")
 
   private def getArn(enrolment: Set[Enrolment]) =
     enrolment.find(_.key equals "HMRC-AS-AGENT").flatMap(_.identifiers.find(_.key equals "AgentReferenceNumber").map(_.value))
 
   def AuthorisedWithAgentAsync(body: AsyncPlayUserRequest): Action[AnyContent] = {
     Action.async { implicit request =>
-      authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and affinityGroup) {
-        case enrol ~ affinityG =>
-          (isAgentAffinityGroup(affinityG.get), getArn(enrol.enrolments)) match {
-            case (true, Some(arn)) => body(request)(AgentRequest(enrol, Some(arn), request))
-            case (true, None) => body(request)(AgentRequest(enrol, None, request))
-            case _ => Future.successful(Redirect(routes.LandingController.goToErrorPage()))
-          }
-        case _ => Future.successful(Redirect(routes.LandingController.goToErrorPage()))
+      authorisedWithAgent[Result] { agentInfo =>
+        body(request)(AgentRequest(agentInfo.enrolments, agentInfo.arn, request))
+      } map { maybeResult =>
+        // TODO add test and change back to pre-new-auth URL:
+        // Redirect(routes.LandingController.root())
+        maybeResult.getOrElse (Redirect(routes.LandingController.root()))
       } recover {
         case x: NoActiveSession ⇒
           Logger.warn(s"could not authenticate user due to: No Active Session " + x)
-          toGGLogin(frontendAppConfig.getAccountPageCallbackUrl)
+          // TODO use authentication.login-callback.url ?
+          toGGLogin(GGConfig.ggSignInUrl)
       }
     }
   }
+
+  def authorisedWithAgent[R](body: (AgentInfo => Future[R]))(implicit hc: HeaderCarrier): Future[Option[R]] =
+    authorised(AuthProviders(GovernmentGateway)).retrieve(allEnrolments and affinityGroup) {
+      case enrol ~ affinityG =>
+        affinityG match {
+          case Some(Agent) => body(AgentInfo(enrol, getArn(enrol.enrolments))).map(result => Some(result))
+          case _ => Future successful None
+        }
+    }
 }

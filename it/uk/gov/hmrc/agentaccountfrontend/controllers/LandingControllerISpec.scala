@@ -59,7 +59,7 @@ class LandingControllerISpec extends UnitSpec with MockitoSugar with OneAppPerSu
       authorisedAsAgentMockWithoutEnrolments
       val result = await(controller.agentAccountLanding().apply(FakeRequest()))
       status(result) shouldBe 200
-      bodyOf(result) should include("1")
+      bodyOf(result) should include("One")
     }
 
     "show number 2 if user has enrolment with no mapping " in {
@@ -68,7 +68,7 @@ class LandingControllerISpec extends UnitSpec with MockitoSugar with OneAppPerSu
       when(mockMappingConnector.hasMapping(any())(any(), any())).thenReturn(Future successful false)
       val result = await(controller.agentAccountLanding().apply(FakeRequest()))
       status(result) shouldBe 200
-      bodyOf(result) should include("2")
+      bodyOf(result) should include("Two")
     }
 
     "show number 3 if user has enrolment and mapping" in {
@@ -78,7 +78,7 @@ class LandingControllerISpec extends UnitSpec with MockitoSugar with OneAppPerSu
 
       val result = await(controller.agentAccountLanding().apply(FakeRequest()))
       status(result) shouldBe 200
-      bodyOf(result) should include("3")
+      bodyOf(result) should include("Three")
     }
   }
 

@@ -49,9 +49,9 @@ class LandingController @Inject()(
       mapping <- hasMapping
       enrolment = hasMtdEnrolment
     } yield (enrolment, mapping) match {
-      case (false, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(1))
-      case (true, false) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(2))
-      case (true, true) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page(3))
+      case (false, _) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page("One"))
+      case (true, false) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page("Two"))
+      case (true, true) => Ok(uk.gov.hmrc.agentaccountfrontend.views.html.agent_account_page("Three"))
     }
   }
 
