@@ -7,12 +7,12 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 object MappingStubs {
 
   def mappingIsFound(arn: Arn): Unit = {
-    stubFor(put(urlPathEqualTo(s"/agent-mapping/mappings/${arn.value}"))
+    stubFor(get(urlPathEqualTo(s"/agent-mapping/mappings/${arn.value}"))
       willReturn aResponse().withStatus(200))
   }
 
   def mappingNotFound(arn: Arn): Unit = {
-    stubFor(put(urlPathEqualTo(s"/agent-mapping/mappings/${arn.value}"))
+    stubFor(get(urlPathEqualTo(s"/agent-mapping/mappings/${arn.value}"))
       willReturn aResponse().withStatus(404))
   }
 
