@@ -65,10 +65,7 @@ class LandingController @Inject()(
   private def hasMapping(implicit request: AgentRequest[_], hc: HeaderCarrier): Future[Boolean] = {
     request.arn match {
       case None => Future successful false
-      case Some(arn) =>
-        for {
-          status <- mappingConnector.hasMapping(Arn(arn))
-        } yield status
+      case Some(arn) => mappingConnector.hasMapping(Arn(arn)).map(status => status)
     }
   }
 }

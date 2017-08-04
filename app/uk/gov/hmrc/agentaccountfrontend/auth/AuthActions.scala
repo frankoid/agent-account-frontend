@@ -50,13 +50,10 @@ trait AuthActions extends AuthorisedFunctions with Redirects {
       authorisedWithAgent[Result] { agentInfo =>
         body(request)(AgentRequest(agentInfo.enrolments, agentInfo.arn, request))
       } map { maybeResult =>
-        // TODO add test and change back to pre-new-auth URL:
-        // Redirect(routes.LandingController.root())
         maybeResult.getOrElse (Redirect(routes.LandingController.root()))
       } recover {
         case x: NoActiveSession ⇒
           Logger.warn(s"could not authenticate user due to: No Active Session " + x)
-          // TODO use authentication.login-callback.url ?
           toGGLogin(GGConfig.ggSignInUrl)
       }
     }
