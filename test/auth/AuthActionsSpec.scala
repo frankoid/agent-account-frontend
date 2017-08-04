@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package auth
 
 import org.mockito.ArgumentMatchers._
@@ -41,12 +57,10 @@ class AuthActionsSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
     }
 
     def testAuthActionsRequest = authorisedWithAgent {
-        agentRequest =>
-          Future.successful(agentRequest)
+      agentRequest =>
+        Future.successful(agentRequest)
     }
 
-
-    def what = when(authorisedWithAgent(any())(any())).thenReturn(Future successful None)
 
     override def authConnector: AuthConnector = mockAuthConnector
 
@@ -85,17 +99,18 @@ class AuthActionsSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
     "return an Agent enrolments details when authenticated user is an Agent" in {
       mockAuth(affinityGroup = AffinityGroup.Agent, enrolment = Set(agentEnrolment))
 
-      testAuthImpl.what
 
-      val result = testAuthImpl.testAuthActionsRequest
-
-      println("\nawait\n\n" + await(result))
+      val result: Future[Option[testAuthImpl.AgentInfo]] = testAuthImpl.testAuthActionsRequest
+      await(result).get.enrolments shouldBe Enrolments(Set(agentEnrolment))
     }
+
 
     "return None if authenticated user is not an Agent" in {
+      mockAuth(affinityGroup = AffinityGroup.Individual, enrolment = Set(agentEnrolment))
 
+
+      val result = testAuthImpl.testAuthActionsRequest
+      await(result) shouldBe None
     }
   }
-
 }
-
